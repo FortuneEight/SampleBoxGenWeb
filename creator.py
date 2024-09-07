@@ -11,8 +11,9 @@ SAVE_FILE_NAME = None
 TRANSPARENT_BACKGROUND = None
 
 
-def sample_box_creator(cover_file_path, direction, top_font_ttf, top_font_size, bottom_font_ttf, bottom_font_size, top_texts, bottom_texts, transparent):
+def sample_box_creator(cover_file_path, direction, panning, top_font_ttf, top_font_size, bottom_font_ttf, bottom_font_size, top_texts, bottom_texts, transparent):
     rect_shape = [(320, 193), (759.9, 632.9)]
+
 
     # create new transparent image
     if transparent == True:
@@ -26,6 +27,23 @@ def sample_box_creator(cover_file_path, direction, top_font_ttf, top_font_size, 
 
     # initialize ImageDraw object and draw rectangle
     draw = ImageDraw.Draw(main_img)
+
+    # insert panning stuff here
+    radius = (759.9-320)/2
+    
+    if panning == 1:
+        # hard panning
+        draw.rectangle([(320-radius,193), (320,632.9)], fill="#aaaaaa")
+        draw.rectangle([(759.9,193), (759.9+radius,632.9)], fill="#aaaaaa")
+    elif panning == 2:
+        # soft panning
+        draw.ellipse([(320-radius,193), (320+radius, 632.9)], fill="#aaaaaa")
+        draw.ellipse([(759.9-radius,193), (759.9+radius, 632.9)], fill="#aaaaaa")
+    elif panning == 3:
+        # sawtooth panning
+        mid = (193+632.9)/2
+        draw.polygon([(320-radius, mid), (320, 193), (320, 632.9)], fill="#aaaaaa")
+        draw.polygon([(759.9+radius, mid), (759.9, 193), (759.9, 632.9)], fill="#aaaaaa")
 
     # calculate image
     if direction <= -90:
@@ -112,31 +130,11 @@ def sample_box_creator(cover_file_path, direction, top_font_ttf, top_font_size, 
     main_img.save(f"{top_texts[0]}.png")
     return main_img
 
-
-
-def generate_sample_box():
-    global COVER_FILE_PATH
-    global TOP_FONT_TTF_PATH
-    global BOTTOM_FONT_TTF_PATH
-    global SAVE_FILE_NAME
-    global TRANSPARENT_BACKGROUND
-
-
-    direction = int(txt_01.get(1.0, "end-1c"))
-    top_font_size = int(txt_02.get(1.0, "end-1c"))
-    bottom_font_size = int(txt_03.get(1.0, "end-1c"))
-    top_texts = txt_04.get(1.0, "end-1c").split("\n")
-    bottom_texts = txt_05.get(1.0, "end-1c").split("\n")
-    TRANSPARENT_BACKGROUND = True if var1.get() == 1 else False
-
-    filetypes = [("PNG Files", "*.png")]
-    SAVE_FILE_NAME = fd.asksaveasfilename(title="Save as PNG File", filetypes=filetypes)
-    sample_box_creator(COVER_FILE_PATH, direction, TOP_FONT_TTF_PATH, top_font_size, BOTTOM_FONT_TTF_PATH, bottom_font_size, top_texts, bottom_texts, SAVE_FILE_NAME, TRANSPARENT_BACKGROUND)
-
 st.title("F8's Sample Box Generator")
 
 file = st.file_uploader("Open Cover File", accept_multiple_files=False, type=["png", "jpg", "jpeg"])
 direc = st.number_input("Direction (can go from -100 as 100% left to 100 as 100% right, and 101 = white border)", min_value=-100, max_value=101, value=0, step=1)
+panning = st.number_input("Panning (0 for none, 1 for hard panning, 2 for soft panning, 3 for sawtooth panning).", min_value=0, max_value=3, value=0, step=1)
 tfttf = st.file_uploader("Open Top font TTF", accept_multiple_files=False, type=["ttf"])
 bfttf = st.file_uploader("Open Bottom font TTF", accept_multiple_files=False, type=["ttf"])
 tfs = st.number_input("Top font size", min_value=1, max_value=200, value=53, step=1)
@@ -146,7 +144,7 @@ bts = st.text_area("Bottom text input", key=7)
 tranback = st.checkbox("Transparent background?")
 
 try:
-    st.image(sample_box_creator(file, direc, tfttf, tfs, bfttf, bfs, tts, bts, tranback))
+    st.image(sample_box_creator(file, direc, panning, tfttf, tfs, bfttf, bfs, tts, bts, tranback))
     save_image_Filename = "{}.png".format(tts.split("\n")[0])
     with open(save_image_Filename, "rb") as f:
         st.download_button(label="Download Image!", data=f, file_name=save_image_Filename, mime="image/png")
